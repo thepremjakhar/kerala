@@ -1057,6 +1057,7 @@
             });
         });
 
+        <!-- ... existing code ... -->
         // 9. Simple Custom Confetti (Vanilla JS)
         function shootConfetti() {
             const canvas = document.getElementById('confetti-canvas');
@@ -1091,3 +1092,50 @@
                     p.rotation += p.rotationSpeed;
                     
                     if (p.y < canvas.height) active = true;
+                    
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                    ctx.restore();
+                });
+                
+                if (active) {
+                    requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            animate();
+        }
+
+        // 10. Map Animation (Live Vehicle Tracking along the SVG path)
+        function initMapAnimation() {
+            const vehicle = document.getElementById('liveVehicle');
+            const path = document.getElementById('routePath');
+            if(!vehicle || !path) return;
+            
+            const pathLength = path.getTotalLength();
+            const duration = 15000; // 15 seconds loop for the journey
+            let startTime = null;
+
+            function animateVehicle(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let elapsed = timestamp - startTime;
+                let percent = (elapsed % duration) / duration; 
+                
+                // SVG पाथ पर वर्तमान लोकेशन ज्ञात करें
+                const point = path.getPointAtLength(percent * pathLength);
+                
+                // वाहन की लोकेशन अपडेट करें
+                vehicle.setAttribute('transform', `translate(${point.x}, ${point.y})`);
+                
+                requestAnimationFrame(animateVehicle);
+            }
+            
+            requestAnimationFrame(animateVehicle);
+        }
+    </script>
+</body>
+</html>
