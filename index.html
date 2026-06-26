@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kerala Travel Companion</title>
+    
+    <!-- Google Fonts for Clean, Highly Legible Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Intuitive Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet Map Engine -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Canvas Confetti for Celebration Alerts -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Tailwind Styling Tweaks -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        theme: {
+                            darkBg: '#0F172A',      // Slate 900
+                            cardBg: '#1E293B',      // Slate 800
+                            border: '#334155',      // Slate 700
+                            accent: '#10B981',      // Emerald 500
+                            accentHover: '#059669', // Emerald 600
+                            gold: '#F59E0B',        // Amber 500
+                            coral: '#EF4444',       // Red 500
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom responsive scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0F172A;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #10B981;
+        }
+
+        /* Prevent Leaflet Map overlap with text dropdowns */
+        .leaflet-container {
+            background: #0F172A !important;
+            border-radius: 1rem;
+            z-index: 1;
+        }
+        .dark-tiles {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+
+        /* Pulsing dot animation for map cities */
+        .map-pulse-dot {
+            background: #10B981;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse-dot-effect 2s infinite;
+        }
+        @keyframes pulse-dot-effect {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        /* Music equalizer animation */
+        @keyframes bounce-equalizer {
+            0%, 100% { transform: scaleY(0.3); }
+            50% { transform: scaleY(1.3); }
+        }
+        .eq-bar {
+            animation: bounce-equalizer 1s ease-in-out infinite;
+            transform-origin: bottom;
+        }
+
+        /* Smooth continuous scroll transition for trivia */
+        #trivia-slider {
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+    </style>
+</head>
+<body class="bg-theme-darkBg text-slate-100 font-sans antialiased selection:bg-theme-accent selection:text-slate-900">
+
+<!-- Clean Header with Day Selectors -->
+<header class="border-b border-theme-border bg-theme-darkBg/95 backdrop-blur-md sticky top-0 z-40 px-4 py-3 md:py-4">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <!-- Logo & Title -->
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-theme-accent/15 border border-theme-accent/30 flex items-center justify-center text-theme-accent text-lg">
+                <i class="fa-solid fa-compass"></i>
+            </div>
+            <div>
+                <h1 class="text-base md:text-lg font-bold tracking-tight text-white">Kerala Travel Planner</h1>
+                <p class="text-[11px] text-slate-400">Simple, easy-to-use interactive guide</p>
+            </div>
+        </div>
+
+        <!-- Day Tabs (Large touch targets for mobile) -->
+        <div class="flex flex-wrap items-center justify-center gap-1.5 md:gap-2">
+            <button onclick="selectDay(1)" id="day-tab-1" class="day-btn px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 border bg-theme-accent text-slate-900 border-theme-accent">
+                Day 1: Kochi
+            </button>
+            <button onclick="selectDay(2)" id="day-tab-2" class="day-btn px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 border border-theme-border text-slate-300 hover:border-theme-accent/50">
+                Day 2: Munnar
+            </button>
+            <button onclick="selectDay(3)" id="day-tab-3" class="day-btn px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 border border-theme-border text-slate-300 hover:border-theme-accent/50">
+                Day 3: Alleppey
+            </button>
+            <button onclick="selectDay(4)" id="day-tab-4" class="day-btn px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 border border-theme-border text-slate-300 hover:border-theme-accent/50">
+                Day 4: Trivandrum
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Hero Showcase Block -->
+<div class="relative w-full h-[32vh] md:h-[45vh] flex items-end overflow-hidden border-b border-theme-border">
+    <div class="absolute inset-0 bg-slate-950">
+        <img id="hero-img" 
+             src="https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?auto=format&fit=crop&w=1600&q=80" 
+             class="w-full h-full object-cover object-center filter opacity-40 transition-all duration-700 ease-out" 
+             alt="Kerala Backwaters Cinematic Wide Screen">
+        <div class="absolute inset-0 bg-gradient-to-t from-theme-darkBg via-transparent to-transparent"></div>
+    </div>
+
+    <!-- Hero details overlay -->
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-4 pb-6 md:pb-10">
+        <div class="inline-flex items-center gap-2 bg-theme-accent/15 border border-theme-accent/30 rounded-full px-3 py-1 mb-3">
+            <span class="w-2 h-2 rounded-full bg-theme-accent animate-pulse"></span>
+            <span id="hero-mini-badge" class="text-[10px] md:text-xs font-bold text-theme-accent uppercase tracking-widest">ACTIVE ROUTE</span>
+        </div>
+        <h2 id="hero-title" class="text-2xl md:text-5xl font-extrabold text-white leading-tight uppercase tracking-tight">
+            Day 1: Kochi Heritage
+        </h2>
+        <p id="hero-desc" class="text-slate-300 text-sm md:text-base font-light max-w-2xl mt-2 leading-relaxed">
+            Walk past beautiful historical sites, ancient Chinese nets, and cozy cafes. Experience a wonderful mix of old colonial history and local culture.
+        </p>
+    </div>
+</div>
+
+<!-- Progress and Live Sound Ribbon -->
+<section class="bg-theme-cardBg/60 border-b border-theme-border py-4 px-4">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <!-- Quick Stats Indicators -->
+        <div class="flex items-center gap-4 w-full md:w-auto">
+            <div class="flex-1 md:flex-initial min-w-[150px]">
+                <div class="flex justify-between text-[11px] font-semibold text-slate-400 mb-1">
+                    <span>OVERALL TRIP COMPLETED</span>
+                    <span id="progress-val-text" class="text-theme-accent font-bold">0%</span>
+                </div>
+                <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700/50">
+                    <div id="progress-val-bar" class="bg-theme-accent h-full transition-all duration-500 w-0"></div>
+                </div>
+            </div>
+            <div id="badges-unlocked" class="flex items-center gap-1.5 flex-wrap">
+                <!-- Badges load here -->
+            </div>
+        </div>
+
+        <!-- Music Controller Vibe Box -->
+        <div class="flex items-center justify-between gap-3 bg-slate-900/90 border border-theme-border rounded-xl p-2.5 w-full md:w-auto">
+            <div class="flex items-center gap-2.5">
+                <button id="vibe-btn" onclick="toggleVibeTrack()" class="w-8 h-8 rounded-lg bg-theme-accent/20 hover:bg-theme-accent hover:text-slate-950 text-theme-accent flex items-center justify-center text-xs transition-all duration-200">
+                    <i id="vibe-btn-icon" class="fa-solid fa-play"></i>
+                </button>
+                <div class="flex flex-col">
+                    <span class="text-[9px] uppercase font-bold text-slate-500">PLAYLIST VIBE</span>
+                    <span id="vibe-song-title" class="text-[11px] font-semibold text-slate-200">Kochi Waves & Sitar</span>
+                </div>
+            </div>
+            <!-- Interactive Visual EQ Wave -->
+            <div class="flex items-end gap-[2px] h-6 px-1">
+                <div id="eq-b1" class="eq-bar bg-theme-accent w-[3px] h-3 rounded-full" style="animation-delay: 0.1s; animation-play-state: paused;"></div>
+                <div id="eq-b2" class="eq-bar bg-theme-accent w-[3px] h-4 rounded-full" style="animation-delay: 0.3s; animation-play-state: paused;"></div>
+                <div id="eq-b3" class="eq-bar bg-theme-accent w-[3px] h-2 rounded-full" style="animation-delay: 0.5s; animation-play-state: paused;"></div>
+                <div id="eq-b4" class="eq-bar bg-theme-accent w-[3px] h-5 rounded-full" style="animation-delay: 0.2s; animation-play-state: paused;"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Responsive Content Container -->
+<main class="max-w-7xl mx-auto px-4 py-6 md:py-10 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
+    
+    <!-- LEFT SIDEBAR: Interactive Map & Budget Calculator -->
+    <section class="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+        
+        <!-- Live Map Segment -->
+        <div class="bg-theme-cardBg border border-theme-border rounded-2xl overflow-hidden shadow-lg">
+            <!-- Map Header -->
+            <div class="p-4 border-b border-theme-border flex items-center justify-between bg-slate-900/40">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-theme-accent animate-ping"></span>
+                    <div>
+                        <h3 class="text-xs font-bold text-white uppercase tracking-wider">Interactive Live Map</h3>
+                        <p class="text-[10px] text-slate-400">Simulating real driving paths</p>
+                    </div>
+                </div>
+                <button onclick="triggerCarTrip()" class="bg-slate-800 hover:bg-theme-accent hover:text-slate-900 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-slate-300 transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-car"></i> Replay Drive
+                </button>
+            </div>
+
+            <!-- Leaflet Container -->
+            <div id="leaflet-map-element" class="w-full h-[260px] md:h-[320px]"></div>
+
+            <!-- Dynamic Route details panel -->
+            <div class="p-4 bg-slate-900/60 border-t border-theme-border space-y-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span id="route-label" class="font-bold text-theme-accent uppercase">Kochi Airport ➔ Fort Kochi</span>
+                    <span id="route-km" class="font-semibold bg-slate-800 px-2 py-0.5 rounded text-slate-300">42 km</span>
+                </div>
+                <div class="grid grid-cols-4 gap-2 pt-1">
+                    <div class="p-2 bg-theme-darkBg rounded-xl border border-theme-border/50 text-center">
+                        <span class="text-[8px] text-slate-400 font-bold block uppercase">Drive Time</span>
+                        <span id="est-drive" class="text-xs font-bold text-white">1h 15m</span>
+                    </div>
+                    <div class="p-2 bg-theme-darkBg rounded-xl border border-theme-border/50 text-center">
+                        <span class="text-[8px] text-slate-400 font-bold block uppercase">Cab Fare</span>
+                        <span id="est-cab" class="text-xs font-bold text-theme-accent">₹1,400</span>
+                    </div>
+                    <div class="p-2 bg-theme-darkBg rounded-xl border border-theme-border/50 text-center">
+                        <span class="text-[8px] text-slate-400 font-bold block uppercase">Auto Fare</span>
+                        <span id="est-auto" class="text-xs font-bold text-theme-gold">₹500</span>
+                    </div>
+                    <div class="p-2 bg-theme-darkBg rounded-xl border border-theme-border/50 text-center">
+                        <span class="text-[8px] text-slate-400 font-bold block uppercase">Local Bus</span>
+                        <span id="est-bus" class="text-xs font-bold text-slate-300">₹120</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Budget Planner Card -->
+        <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 md:p-6 shadow-lg">
+            <div class="mb-4">
+                <span class="text-[9px] uppercase font-bold text-theme-accent tracking-widest block">BUDGET PLANNER</span>
+                <h3 class="text-base font-bold text-white">Trip Cost Calculator</h3>
+                <p class="text-[11px] text-slate-400">See estimated costs based on your custom preferences.</p>
+            </div>
+
+            <!-- Cost Sliders and Selects -->
+            <div class="space-y-4">
+                <!-- Person Selector Slider -->
+                <div>
+                    <div class="flex justify-between text-xs font-semibold mb-1.5">
+                        <span class="text-slate-300">Total Travelers</span>
+                        <span class="text-theme-accent font-bold" id="slider-count-label">2 People</span>
+                    </div>
+                    <input type="range" id="input-people-slider" min="1" max="10" value="2" 
+                           class="w-full accent-theme-accent bg-slate-700 h-1 rounded-lg cursor-pointer" oninput="calculateTripCosts()">
+                </div>
+
+                <!-- Accommodation Levels Selection -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Where You Stay</label>
+                    <select id="input-hotel-level" class="w-full bg-theme-darkBg border border-theme-border rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-theme-accent transition-colors" onchange="calculateTripCosts()">
+                        <option value="luxury">Luxury Hotels & Historic Resorts (₹18,000+ per night)</option>
+                        <option value="mid" selected>Boutique Villas & Nice Homestays (₹7,000 per night)</option>
+                        <option value="budget">Simple Comfort Lodges (₹2,500 per night)</option>
+                        <option value="hostel">Design Hostels & Shared Dorms (₹800 per night)</option>
+                    </select>
+                </div>
+
+                <!-- Transport Levels Selection -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">How You Travel</label>
+                    <select id="input-transport-level" class="w-full bg-theme-darkBg border border-theme-border rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-theme-accent transition-colors" onchange="calculateTripCosts()">
+                        <option value="private" selected>Private Car & Driver (₹3,500 per day)</option>
+                        <option value="eco">Local Rickshaws & Taxis (₹1,000 per day)</option>
+                        <option value="public">Local Scenic Trains & Buses (₹150 per day)</option>
+                    </select>
+                </div>
+
+                <!-- Estimated Cost breakdown display -->
+                <div class="bg-theme-darkBg/80 border border-theme-border rounded-xl p-4 space-y-3 shadow-inner">
+                    <div class="flex justify-between items-end border-b border-theme-border/50 pb-3">
+                        <div>
+                            <span class="text-[9px] text-slate-400 font-semibold uppercase block">Grand Total Estimation</span>
+                            <div class="flex items-baseline gap-1 mt-0.5">
+                                <span class="text-xs font-bold text-theme-accent">₹</span>
+                                <span id="sum-grand-total" class="text-2xl font-bold text-white tracking-tight">56,400</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[9px] text-slate-400 font-semibold uppercase block">Cost Per Person</span>
+                            <span id="sum-per-person" class="text-xs font-bold text-slate-300">₹28,200</span>
+                        </div>
+                    </div>
+
+                    <!-- Details of elements calculated -->
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] text-slate-400">
+                        <div class="flex justify-between items-center">
+                            <span>Hotel Stays:</span>
+                            <span id="break-hotel" class="font-bold text-slate-200">₹28,000</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Transport:</span>
+                            <span id="break-transit" class="font-bold text-slate-200">₹14,000</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Food & Dining:</span>
+                            <span id="break-food" class="font-bold text-slate-200">₹9,600</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Entry Tickets:</span>
+                            <span id="break-tickets" class="font-bold text-slate-200">₹4,800</span>
+                        </div>
+                    </div>
+
+                    <p class="text-[10px] text-slate-400 leading-snug border-t border-theme-border/50 pt-2 flex items-start gap-1.5">
+                        <i class="fa-solid fa-circle-info text-theme-accent mt-0.5"></i>
+                        <span>Includes activities, vegetarian snacks, and taxes. Prices can change based on seasons.</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RIGHT SECTION: Full Day Breakdown details (Timeline, Lodging, Tips, Phrasebook) -->
+    <section class="lg:col-span-7 space-y-6">
+        
+        <!-- Animated Weather Simulator Card -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <!-- Quick Weather Forecast block -->
+            <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-4 flex items-center justify-between shadow-md">
+                <div class="space-y-1.5">
+                    <span class="text-[9px] font-bold text-theme-accent uppercase tracking-wider block">Local Weather</span>
+                    <h4 id="loc-weather-name" class="text-sm font-semibold text-white">Fort Kochi Coast</h4>
+                    <div class="flex items-baseline gap-2">
+                        <span id="loc-weather-temp" class="text-2xl font-bold text-white tracking-tight">29°C</span>
+                        <span id="loc-weather-desc" class="text-[11px] text-slate-400">Humid & Warm</span>
+                    </div>
+                </div>
+                <div id="loc-weather-icon" class="text-4xl text-theme-accent">
+                    <i class="fa-solid fa-cloud-sun"></i>
+                </div>
+            </div>
+
+            <!-- Sunrise / Sunset forecast timings -->
+            <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-4 flex flex-col justify-between shadow-md">
+                <span class="text-[9px] font-bold text-theme-gold uppercase tracking-wider block">Sun Forecast Timings</span>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-theme-gold/10 border border-theme-gold/20 rounded-lg flex items-center justify-center text-theme-gold text-xs">
+                            <i class="fa-solid fa-circle-chevron-up"></i>
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-slate-400 block font-semibold">SUNRISE</span>
+                            <span id="time-sunrise" class="text-xs font-bold text-white">06:05 AM</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-theme-coral/10 border border-theme-coral/20 rounded-lg flex items-center justify-center text-theme-coral text-xs">
+                            <i class="fa-solid fa-circle-chevron-down"></i>
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-slate-400 block font-semibold">SUNSET</span>
+                            <span id="time-sunset" class="text-xs font-bold text-white">06:42 PM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Multi-Image Destination Gallery (No Overlaps, Tap-Friendly) -->
+        <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 md:p-6 shadow-md space-y-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <span class="text-[9px] uppercase font-bold text-theme-accent tracking-widest block">PHOTO INSPIRATIONS</span>
+                    <h3 class="text-base font-bold text-white">Destination Photo Gallery</h3>
+                </div>
+                <span class="text-xs text-slate-400"><i class="fa-solid fa-camera"></i> Tap to Swap Hero</span>
+            </div>
+            
+            <!-- Gallery Grid with Smooth Transitions -->
+            <div id="target-photo-deck" class="grid grid-cols-3 gap-3">
+                <!-- Injected via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Day Timeline Itineraries -->
+        <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 md:p-6 shadow-md space-y-4">
+            <h3 class="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-regular fa-calendar-check text-theme-accent"></i> Day Schedule Timings
+            </h3>
+            
+            <!-- Target for Timeline Insertion -->
+            <div id="target-timeline" class="space-y-4">
+                <!-- Items loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Curated Stay Options -->
+        <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 md:p-6 shadow-md space-y-4">
+            <h3 class="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-hotel text-theme-accent"></i> Recommended Hotels
+            </h3>
+            <p class="text-xs text-slate-400">Selected based on safety, ratings, and excellent hospitality.</p>
+            
+            <!-- Target for Stays -->
+            <div id="target-stays" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Stays load dynamically -->
+            </div>
+        </div>
+
+        <!-- Vegetarian Food Explorer & Restaurants -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Restaurants and vegetarian Cafes -->
+            <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 shadow-md space-y-4">
+                <h4 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-circle-dot text-theme-accent"></i> Best Vegetarian Cafes
+                </h4>
+                <div id="target-cafes" class="space-y-3">
+                    <!-- Cafes loaded here -->
+                </div>
+            </div>
+
+            <!-- Local Specialities Food card -->
+            <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 shadow-md space-y-4">
+                <h4 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-utensils text-theme-accent"></i> Must-Try Local Foods
+                </h4>
+                <div id="target-localfoods" class="space-y-3">
+                    <!-- Foods load here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Creator Kit and Photography Targets -->
+        <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 md:p-6 shadow-md space-y-4">
+            <h3 class="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-camera-retro text-theme-accent"></i> Creator Chronicle & Camera Guide
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-3.5 bg-slate-900/60 rounded-xl border border-theme-border/50 space-y-1">
+                    <span class="text-[9px] text-theme-accent font-bold block uppercase tracking-wide">Sony A6700 Gear</span>
+                    <p id="creator-rec-lens" class="text-xs text-slate-300 font-light leading-relaxed"></p>
+                </div>
+                <div class="p-3.5 bg-slate-900/60 rounded-xl border border-theme-border/50 space-y-1">
+                    <span class="text-[9px] text-theme-gold font-bold block uppercase tracking-wide">Cinematic Settings</span>
+                    <p id="creator-shot-settings" class="text-xs text-slate-300 font-light leading-relaxed"></p>
+                </div>
+                <div class="p-3.5 bg-slate-900/60 rounded-xl border border-theme-border/50 space-y-1">
+                    <span class="text-[9px] text-theme-coral font-bold block uppercase tracking-wide">Drone Regulations</span>
+                    <p id="creator-drone-notes" class="text-xs text-slate-300 font-light leading-relaxed"></p>
+                </div>
+            </div>
+
+            <!-- Instagram / Photography Hotspots -->
+            <div class="pt-2">
+                <span class="text-[10px] text-slate-400 font-bold block mb-2 uppercase tracking-wider">Top-Rated Instagram Spots</span>
+                <div id="target-insta-spots" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Local Hidden Gems and Extra Excursions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Hidden Gems Card -->
+            <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 shadow-md space-y-3">
+                <h4 class="text-xs font-bold text-theme-accent uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-map-pin"></i> Hidden Gems (Low Crowds)
+                </h4>
+                <div class="p-3.5 bg-slate-900/60 border border-theme-border/30 rounded-xl">
+                    <h5 class="text-xs font-bold text-white mb-1" id="loc-gem-title">Pepper House Library</h5>
+                    <p class="text-xs text-slate-300 font-light leading-relaxed" id="loc-gem-desc"></p>
+                </div>
+            </div>
+
+            <!-- Extra Spots Card -->
+            <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 shadow-md space-y-3">
+                <h4 class="text-xs font-bold text-theme-gold uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-plus-circle"></i> If You Have Extra Time
+                </h4>
+                <div class="p-3.5 bg-slate-900/60 border border-theme-border/30 rounded-xl">
+                    <h5 class="text-xs font-bold text-white mb-1" id="loc-opt-title">Kovalam Beach Sunset</h5>
+                    <p class="text-xs text-slate-300 font-light leading-relaxed" id="loc-opt-desc"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Packing Checklist & Day Challenges -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Interactive Packing List checklist -->
+            <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 shadow-md space-y-3.5">
+                <div class="flex justify-between items-center">
+                    <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-suitcase"></i> Recommended Packing
+                    </h4>
+                    <span id="pack-count-label" class="text-[10px] font-bold text-theme-accent bg-theme-accent/10 px-2 py-0.5 rounded">0/3</span>
+                </div>
+                
+                <div id="target-pack-list" class="space-y-2.5">
+                    <!-- Checkboxes load dynamically -->
+                </div>
+            </div>
+
+            <!-- Photo badges challenges checklist -->
+            <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 shadow-md space-y-3.5">
+                <div class="flex justify-between items-center">
+                    <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-medal text-theme-gold"></i> Creator Challenges
+                    </h4>
+                    <span id="badge-count-label" class="text-[10px] font-bold text-slate-300 bg-slate-900 px-2 py-0.5 rounded">LOCK STATUS</span>
+                </div>
+
+                <div id="target-challenges" class="space-y-2.5">
+                    <!-- Challenges load dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Shopping, Souvenirs & Markets -->
+        <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 md:p-6 shadow-md space-y-4">
+            <h3 class="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-bag-shopping text-theme-accent"></i> Shopping & Local Souvenirs
+            </h3>
+            <div id="target-shopping" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Shopping locations load dynamically -->
+            </div>
+        </div>
+
+        <!-- Malayalam Dictionary Phrasebook -->
+        <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 md:p-6 shadow-md space-y-3.5">
+            <h3 class="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-language text-theme-accent"></i> Local Malayalam Phrases
+            </h3>
+            <p class="text-xs text-slate-400">Click a phrase below to copy it. Use them to greet locals, taxi drivers, and restaurant staff!</p>
+            
+            <div id="target-phrases" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <!-- Phrases injected here -->
+            </div>
+        </div>
+
+        <!-- Emergency Contacts & Scams Card -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Scam and Trap safety alerts -->
+            <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 shadow-md space-y-3">
+                <h4 class="text-xs font-bold text-theme-coral uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-exclamation"></i> Safety & Scam Alerts
+                </h4>
+                <div class="space-y-3">
+                    <div class="p-3 bg-theme-coral/5 border border-theme-coral/20 rounded-xl">
+                        <span class="text-[10px] text-theme-coral font-bold block mb-1 uppercase">Common Local Scam</span>
+                        <p id="alert-scam-txt" class="text-xs text-slate-300 font-light leading-relaxed"></p>
+                    </div>
+                    <div class="p-3 bg-slate-900/40 border border-theme-border/50 rounded-xl">
+                        <span class="text-[10px] text-slate-400 font-bold block mb-1 uppercase">Mistake to Avoid</span>
+                        <p id="alert-mistake-txt" class="text-xs text-slate-300 font-light leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency contacts, ATMs and Clinics -->
+            <div class="bg-theme-cardBg border border-theme-border rounded-2xl p-5 shadow-md space-y-3">
+                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-heart-pulse text-theme-coral"></i> Local Support & Emergencies
+                </h4>
+                <div class="grid grid-cols-2 gap-3 text-xs pt-1">
+                    <div class="p-2.5 bg-slate-900/60 border border-theme-border/30 rounded-xl">
+                        <span class="text-[8px] text-slate-400 font-bold block uppercase mb-1">Nearest Clinic</span>
+                        <span id="emerg-hospital" class="font-bold text-slate-200 block"></span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/60 border border-theme-border/30 rounded-xl">
+                        <span class="text-[8px] text-slate-400 font-bold block uppercase mb-1">Pharmacy Shop</span>
+                        <span id="emerg-pharmacy" class="font-bold text-slate-200 block"></span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/60 border border-theme-border/30 rounded-xl">
+                        <span class="text-[8px] text-slate-400 font-bold block uppercase mb-1">Nearest Cash ATM</span>
+                        <span id="emerg-atm" class="font-bold text-slate-200 block"></span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/60 border border-theme-border/30 rounded-xl">
+                        <span class="text-[8px] text-slate-400 font-bold block uppercase mb-1">Police / Helpline</span>
+                        <span id="emerg-phone" class="font-bold text-theme-coral block"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+</main>
+
+<!-- Fun Facts Cultural Trivia Slider Section -->
+<section class="max-w-7xl mx-auto px-4 py-10 md:py-16">
+    <div class="bg-theme-cardBg rounded-3xl p-6 md:p-8 relative overflow-hidden border border-theme-border shadow-lg">
+        <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-theme-accent/5 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <!-- Trivia Header controls -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8">
+            <div>
+                <span class="text-[10px] uppercase tracking-wider text-theme-accent font-bold">DISCOVER KERALA</span>
+                <h3 class="text-xl md:text-2xl font-bold text-white mt-1 uppercase">"Did You Know?" Fun Trivia</h3>
+                <p class="text-xs text-slate-400 mt-1">Autoplays smoothly. Tap or touch anywhere inside to pause.</p>
+            </div>
+            
+            <!-- Navigation slide buttons -->
+            <div class="flex gap-2">
+                <button onclick="manualSlideTrivia(-1)" class="w-10 h-10 bg-slate-900 border border-theme-border rounded-xl hover:border-theme-accent text-slate-300 hover:text-theme-accent transition-colors flex items-center justify-center">
+                    <i class="fa-solid fa-angle-left"></i>
+                </button>
+                <button onclick="manualSlideTrivia(1)" class="w-10 h-10 bg-slate-900 border border-theme-border rounded-xl hover:border-theme-accent text-slate-300 hover:text-theme-accent transition-colors flex items-center justify-center">
+                    <i class="fa-solid fa-angle-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Carousel Frame container -->
+        <div id="trivia-slider-container" class="overflow-x-hidden relative w-full cursor-grab active:cursor-grabbing">
+            <div id="trivia-slider" class="flex transition-transform duration-500 ease-out gap-4" style="transform: translateX(0px);">
+                <!-- Dynamic slide cards loaded from javascript arrays -->
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-theme-border bg-slate-950 py-12 text-center text-slate-500 text-xs">
+    <div class="max-w-7xl mx-auto px-4 space-y-3">
+        <span class="text-base font-bold text-white tracking-widest uppercase">KERALA EXPLORE</span>
+        <p class="max-w-md mx-auto">A user-friendly, clean, and interactive travel guide for family trips, creators, and solo wanderers.</p>
+        <p>© 2026 Kerala Travel Chronicles. Crafted with clean interfaces and simple guidelines.</p>
+    </div>
+</footer>
+
+<script>
+    // Simplified English Data Object with rich image collections for each day
+    const travelDb = {
+        1: {
+            id: 1,
+            city: "Kochi",
+            title: "Day 1: Explore Fort Kochi",
+            heroImage: "https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?auto=format&fit=crop&w=1600&q=80",
+            desc: "Walk down old colonial streets with beautiful trees, cozy historic libraries, and iconic Chinese fishing nets. Kochi is famous for its simple sea view walks and delicious coffee shops.",
+            weatherName: "Fort Kochi Coast",
+            weatherTemp: "29°C",
+            weatherDesc: "Warm ocean wind • High humidity",
+            weatherIcon: "fa-solid fa-cloud-sun",
+            sunrise: "06:05 AM",
+            sunset: "06:42 PM",
+            soundVibe: "Kochi Waves & Sitar",
+            badgeName: "🎖️ KOCHI LOCAL EXPERT",
+            distanceText: "42 km (from Cochin Airport)",
+            driveTime: "1h 15m",
+            fareCab: "₹1,400",
+            fareAuto: "₹500",
+            fareBus: "₹120",
+            targetCoords: [9.9667, 76.2411],
+            
+            // Photo Gallery deck
+            gallery: [
+                { url: "https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?auto=format&fit=crop&w=800&q=80", label: "Chinese Fishing Nets" },
+                { url: "https://images.unsplash.com/photo-1588591873755-e41da10636a0?auto=format&fit=crop&w=800&q=80", label: "Colonial Streets" },
+                { url: "https://images.unsplash.com/photo-1599930113840-7e3e9154f3b0?auto=format&fit=crop&w=800&q=80", label: "Spice Alley Markets" }
+            ],
+
+            // Daily Itinerary Details
+            timeline: [
+                { time: "07:30 AM - 11:30 AM", title: "Chinese Nets & St. Francis Church", desc: "Watch local fishermen lift the massive wood levers of traditional Chinese fishing nets. Stroll 10 minutes over to see Vasco da Gama's original gravesite.", dur: "4 Hrs", price: "Free Entry" },
+                { time: "12:00 PM - 03:30 PM", title: "Jew Town Spice Walk & Dutch Palace", desc: "Smell fresh ginger and cloves in the markets. Walk through Mattancherry Palace to see ancient colorful wall paintings.", dur: "3.5 Hrs", price: "₹10 Ticket" },
+                { time: "04:30 PM - 07:30 PM", title: "Pepper House Yard & Harbour Ferry Cruise", desc: "Grab a drink at the quiet leafy Pepper House courtyard. Take a short evening boat tour to see container ports at dusk.", dur: "3 Hrs", price: "₹500 Boat Ride" },
+                { time: "08:00 PM - 10:00 PM", title: "Traditional Kathakali Dance Play", desc: "Watch the amazing costume-makeup Kathakali dance center play. End with a relaxed dinner at a seafood hotel.", dur: "2 Hrs", price: "₹400 Entry" }
+            ],
+
+            // Hotel recommendations
+            stays: [
+                { type: "Luxury Option", name: "Brunton Boatyard", desc: "Old harbor design with beautiful sea views and historic style rooms.", price: "₹22,000 / Night" },
+                { type: "Nice Boutique", name: "Forte Kochi Hotel", desc: "Renovated heritage building with a lovely inner garden swimming pool.", price: "₹9,500 / Night" },
+                { type: "Simple Budget", name: "Fort House Hotel", desc: "Quiet cozy garden rooms located right on the water edge.", price: "₹3,500 / Night" },
+                { type: "Budget Hostel", name: "Zostel Fort Kochi", desc: "Fun, highly rated shared hostel with common hangout rooms for travellers.", price: "₹900 / Night" }
+            ],
+
+            // Dining recommendation
+            cafes: [
+                { name: "Kashi Art Cafe", dish: "Rich homemade dark chocolate cake & hot tea.", rating: "★ 4.6" },
+                { name: "Loafers Corner Cafe", dish: "Warm Malabar parotta served with spicy paneer paneer roast.", rating: "★ 4.5" }
+            ],
+
+            // Local food specialities
+            localFoods: [
+                { name: "Flaky Malabar Parotta", desc: "Layered crispy flatbread cooked with flour and fresh oil." },
+                { name: "Kadala Chickpea Stew", desc: "Dark spiced chickpea curry made with toasted grated coconuts." }
+            ],
+
+            // Shopping Guide
+            shopping: [
+                { item: "Fresh Hills Spices", area: "Jew Town Road Market", desc: "Sacks of real cinnamon, cardamom, black peppercorns, and nutmeg." },
+                { item: "Coir Door Mats", area: "Kashi Art Craft Stall", desc: "Durable floor mats handwoven out of organic coconut husks." }
+            ],
+
+            // Photo advice for Creators
+            gear: "Sigma 18-50mm f/2.8 lens and a glass polarizer filter to reduce ocean sun glare.",
+            settings: "Shoot slow 120fps video to capture sea waves hitting the old wooden nets.",
+            drone: "No Drone Flights. Fort Kochi is inside a high-security military harbor area.",
+
+            // Photography places
+            photoSpots: [
+                { name: "Chinese Nets Walkway", time: "06:15 AM Sunrise" },
+                { name: "Jew Town Alley Walls", time: "02:30 PM Bright Light" }
+            ],
+
+            // Local gems & optionals
+            gemTitle: "Pepper House Library",
+            gemDesc: "A very quiet colonial library hidden in an old Dutch backyard cafe. Full of unique art books.",
+            optionalTitle: "Maritime Museum Vault",
+            optionalDesc: "See centuries-old anchor systems and ship models inside military bunkers.",
+
+            // Warnings
+            scam: "Taxis telling you the spice market is closed so they can drive you to expensive private gift stores.",
+            mistake: "Planning your Dutch Palace trip on Friday, which is when it is closed to the public.",
+
+            // Emergency
+            hospital: "Gautham Clinic (0484-2231500)",
+            pharmacy: "Ameens Medicals Main Jew Town",
+            atm: "SBI Bank Fort Kochi Centre",
+            phone: "Local Police Desk: 100",
+
+            // Phrases
+            phrases: [
+                { word: "Namaskaram", mean: "Hello", pron: "Nuh-mus-kar-um" },
+                { word: "Nanni", mean: "Thank You", pron: "Nun-ni" },
+                { word: "Ethrayaayi?", mean: "How much?", pron: "Eth-ra-yaay-ee?" }
+            ]
+        },
+        2: {
+            id: 2,
+            city: "Munnar",
+            title: "Day 2: Tea Mountains of Munnar",
+            heroImage: "https://images.unsplash.com/photo-1542856391-010fb87dcfed?auto=format&fit=crop&w=1600&q=80",
+            desc: "Travel up into the cool, misty green hills of Munnar. It is famous for endless tea field views, fresh mountain air, quiet waterfalls, and sweet homemade chocolates.",
+            weatherName: "Misty Mountain Heights",
+            weatherTemp: "16°C",
+            weatherDesc: "Chilly wind • Heavy mountain fog",
+            weatherIcon: "fa-solid fa-cloud-showers-heavy",
+            sunrise: "06:01 AM",
+            sunset: "06:38 PM",
+            soundVibe: "Highland Flute & Rain",
+            badgeName: "🎖️ TEA VALLEY TREKKER",
+            distanceText: "130 km (from Fort Kochi)",
+            driveTime: "4h 15m",
+            fareCab: "₹3,800",
+            fareAuto: "N/A (Hills only)",
+            fareBus: "₹240",
+            targetCoords: [10.0889, 77.0595],
+
+            // Photo Gallery deck
+            gallery: [
+                { url: "https://images.unsplash.com/photo-1542856391-010fb87dcfed?auto=format&fit=crop&w=800&q=80", label: "Tea Valley Slopes" },
+                { url: "https://images.unsplash.com/photo-1504198266287-1659872e6590?auto=format&fit=crop&w=800&q=80", label: "Misty Sunrise Peaks" },
+                { url: "https://images.unsplash.com/photo-1517512006864-7edc3b933137?auto=format&fit=crop&w=800&q=80", label: "Tea Leaf Plantation" }
+            ],
+
+            timeline: [
+                { time: "05:00 AM - 09:30 AM", title: "Sunrise Jeep Ride to Kolukkumalai", desc: "Ride a 4x4 offroad jeep before daylight to reach the highest organic tea gardens on earth for a glorious misty sunrise view.", dur: "4.5 Hrs", price: "₹2,500 / Jeep" },
+                { time: "11:00 AM - 02:00 PM", title: "National Park Mountain Goat spotting", desc: "Board the eco-friendly sanctuary bus to see the friendly rare wild mountain goats grazing.", dur: "3 Hrs", price: "₹200 Entry" },
+                { time: "03:00 PM - 05:30 PM", title: "Vintage Tea Leaf Factory Tour", desc: "Step inside a 150-year-old operating tea museum to see leaves being processed, dried, and packed. Enjoy fresh hot tea samples.", dur: "2.5 Hrs", price: "₹150 Ticket" },
+                { time: "07:00 PM - 09:30 PM", title: "Local Foods Dinner by the Fireplace", desc: "Gather near a warm indoor fireplace to taste local cassava root dishes and cardamon sweet rice pocket snacks.", dur: "2.5 Hrs", price: "₹300 Meal" }
+            ],
+
+            stays: [
+                { type: "Luxury Option", name: "Windermere Estate", desc: "Charming wooden cabins located high on mist-covered tea slopes.", price: "₹18,500 / Night" },
+                { type: "Nice Boutique", name: "Elixir Hills Resort", desc: "Modern stone suites overlooking silent pine valleys with stream walks.", price: "₹9,500 / Night" },
+                { type: "Simple Budget", name: "Tea Harvester Lodge", desc: "Pleasant plantation lodging offering free daily garden hikes.", price: "₹4,200 / Night" },
+                { type: "Budget Hostel", name: "Zostel Munnar View", desc: "Amazing glass-front shared lounge facing deep forest valleys.", price: "₹850 / Night" }
+            ],
+
+            cafes: [
+                { name: "Saravana Bhavan", dish: "Super crispy paper roast ghee dosa with hot lentil sambar.", rating: "★ 4.4" },
+                { name: "Lockhart Tea Lounge", dish: "Brewed black tea with golden crisp banana fritters.", rating: "★ 4.5" }
+            ],
+
+            localFoods: [
+                { name: "Ela Ada Sweet Leaf", desc: "Steamed rice pockets filled with fresh coconut, sugar, and cardamoms." },
+                { name: "Mashed Tapioca (Kappa)", desc: "Warm boiled root mash cooked with turmeric paste and spicy raw chilis." }
+            ],
+
+            shopping: [
+                { item: "BOP Loose Tea Leaves", area: "Lockhart Factory Shop", desc: "Authentic strong mountain tea leaf packets offering rich amber color." },
+                { item: "Eucalyptus Aromas", area: "Tata Cooperative Outlets", desc: "Pure medical plant oil drops for cold therapy and soothing baths." }
+            ],
+
+            gear: "Wide lens and a Circular Polarizer filter to block hazy mist shadows and enhance leaf colors.",
+            settings: "Set up a tripod for a slow-motion time lapse of mist waves sweeping over green valleys.",
+            drone: "Drone allowed, but keep flights away from steep rocky cliffs with high wind gusts.",
+
+            photoSpots: [
+                { name: "Lockhart Tea Curves", time: "09:00 AM Morning Light" },
+                { name: "Kolukkumalai Edge", time: "06:10 AM Sunrise Glow" }
+            ],
+
+            gemTitle: "Lakshmi Hills Track",
+            gemDesc: "A peaceful, beautiful wilderness grass hiking path that avoids all tourist crowds.",
+            optionalTitle: "Mattupetty Lake Boat",
+            optionalDesc: "A quick photo stop at Mattupetty dam to see still water mountain reflections.",
+
+            scam: "Shops selling artificial chocolates claiming they are premium organic tree cocoa.",
+            mistake: "Driving on steep hill highways at night because of blinding white fog blocks.",
+
+            hospital: "Tata General Clinic (0486-5230484)",
+            pharmacy: "Munnar Central Pharmacy",
+            atm: "Federal Bank Town ATM Office",
+            phone: "Forest Range Desk: 0486-5230325",
+
+            phrases: [
+                { word: "Chaya", mean: "Hot Tea", pron: "Chaa-yah" },
+                { word: "Vazhi Ethaanu?", mean: "Which way?", pron: "Vuh-zhi eh-thaa-nu?" },
+                { word: "Thunuppu", mean: "Cold weather", pron: "Thuh-nu-ppu" }
+            ]
+        },
+        3: {
+            id: 3,
+            city: "Alleppey",
+            title: "Day 3: Calm Canals of Alleppey",
+            heroImage: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&w=1600&q=80",
+            desc: "Relax in the calm backwater lake canals. Ride inside large, hand-tied wooden houseboats, paddle quiet small canoes, and see lovely village coconut groves.",
+            weatherName: "Tropical Waters",
+            weatherTemp: "28°C",
+            weatherDesc: "Warm coastal sun • Heavy lake breeze",
+            weatherIcon: "fa-solid fa-sun",
+            sunrise: "06:08 AM",
+            sunset: "06:40 PM",
+            soundVibe: "Acoustic Oud & Water Splashes",
+            badgeName: "🎖️ BACKWATER CAPTAIN",
+            distanceText: "175 km (from Munnar Hills)",
+            driveTime: "5h 10m",
+            fareCab: "₹4,200",
+            fareAuto: "₹600",
+            fareBus: "₹280",
+            targetCoords: [9.4981, 76.3388],
+
+            // Photo Gallery deck with beautiful background images specifically for Alleppey
+            gallery: [
+                { url: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&w=800&q=80", label: "Scenic Houseboat Ride" },
+                { url: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80", label: "Coconut Canal Sunrise" },
+                { url: "https://images.unsplash.com/photo-1593693411515-c202e9742797?auto=format&fit=crop&w=800&q=80", label: "Houseboat Living Deck" }
+            ],
+
+            timeline: [
+                { time: "06:00 AM - 09:30 AM", title: "Sunrise Canoe Village Paddle", desc: "Take a quiet wooden paddle boat through narrow village canals. Watch families prepare breakfast and row to work.", dur: "3.5 Hrs", price: "₹800 Rental" },
+                { time: "12:00 PM - 03:30 PM", title: "Heritage Houseboat Luncheon", desc: "Cruise on a giant houseboat tied together with palm ropes. Eat a lunch of fresh hot vegetables and fresh coconut juice.", dur: "3.5 Hrs", price: "₹12,000 / Day" },
+                { time: "04:30 PM - 06:30 PM", title: "Pathiramanal Nature Island Hike", desc: "Step onto a marshy island covered in greenery. Spot elegant white herons, wild ducks, and rare water birds.", dur: "2 Hrs", price: "Free Entry" },
+                { time: "07:30 PM - 10:00 PM", title: "Spiced Village Cottage Dinner", desc: "Enjoy cozy dining at a lakeside homestay. Feast on spiced pumpkin, jackfruit curries, and red coconut rice.", dur: "2.5 Hrs", price: "₹250 Meal" }
+            ],
+
+            stays: [
+                { type: "Luxury Option", name: "Kumarakom Lake Resort", desc: "Beautiful historic pool villas overlooking massive lagoon waters.", price: "₹28,000 / Night" },
+                { type: "Nice Boutique", name: "Vasundhara Sarovar", desc: "Modern lake resort blending classic local details with private boat rides.", price: "₹11,000 / Night" },
+                { type: "Simple Budget", name: "Our Land Island Resort", desc: "Pleasant organic bungalows reachable only by rowing a wooden canoe.", price: "₹3,800 / Night" },
+                { type: "Budget Hostel", name: "Artpackers Life", desc: "Renovated old coco fiber mill hosting daily traveler art classes.", price: "₹950 / Night" }
+            ],
+
+            cafes: [
+                { name: "Cafe Pumpkin", dish: "Warm banana flower cutlets with hot filtered coffee.", rating: "★ 4.5" },
+                { name: "Thaff Diner", dish: "Slow cooked vegetable biryani rice served with fresh pineapple slices.", rating: "★ 4.3" }
+            ],
+
+            localFoods: [
+                { name: "Sweet Unniyappam", desc: "Small fried round cakes prepared with sweet molasses, bananas, and rice flour." },
+                { name: "Kappa Puzhukku", desc: "Creamy boiled root pieces seasoned heavily with grated coconut." }
+            ],
+
+            shopping: [
+                { item: "Coir Mats & Baskets", area: "Cooperative Outlets", desc: "Strong, colorful floor rugs woven out of dry coconut tree fibers." },
+                { item: "Wooden Canoe Models", area: "Alleppey Finish Point", desc: "Highly polished miniature toy houseboats made with dark wood." }
+            ],
+
+            gear: "A 3-axis stabilizer gimbal to keep your videos steady on moving houseboats and canoes.",
+            settings: "Lower your camera to the water surface to film a nice dynamic shot of canoes moving.",
+            drone: "Allowed. Watch out for overhead electrical cables and private bedroom windows.",
+
+            photoSpots: [
+                { name: "Coconut Palm Archway", time: "04:30 PM Golden Light" },
+                { name: "Lagoon Dock Jetty", time: "06:00 AM Sunrise Fog" }
+            ],
+
+            gemTitle: "Thottappally Beach Path",
+            gemDesc: "A stunning quiet spot where the emerald backwater river directly enters the dark-sand ocean.",
+            optionalTitle: "Public Ferry Ride",
+            optionalDesc: "Board a cheap local public passenger boat to experience everyday river travel.",
+
+            scam: "Illegal boat agents on the pier offering unsafe, unlicensed houseboats for extremely low rates.",
+            mistake: "Booking a boat that stays moving late. Boats must dock by 6 PM to prevent damage to local fishing nets.",
+
+            hospital: "Alleppey General Clinic (0477-2282012)",
+            pharmacy: "Narayana Meds finishing dock",
+            atm: "State Bank Lake Jetty ATM",
+            phone: "Port Master Desk: 0477-2252015",
+
+            phrases: [
+                { word: "Vellam", mean: "Water", pron: "Vel-lum" },
+                { word: "Vallom", mean: "Wooden Boat", pron: "Val-lum" },
+                { word: "Kazhicho?", mean: "Did you eat?", pron: "Kuh-zhi-cho?" }
+            ]
+        },
+        4: {
+            id: 4,
+            city: "Trivandrum",
+            title: "Day 4: Royal Trivandrum",
+            heroImage: "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1600&q=80",
+            desc: "Visit the historic capital city of Kerala. Walk past tall gold temples, majestic carved wood palaces, and beautiful old brick museums.",
+            weatherName: "Dynastic City Centre",
+            weatherTemp: "30°C",
+            weatherDesc: "Warm coastal sun • Steady breeze",
+            weatherIcon: "fa-solid fa-sun",
+            sunrise: "06:04 AM",
+            sunset: "06:44 PM",
+            soundVibe: "Temple Chimes & Carnatic Flute",
+            badgeName: "🏆 THE EMERALD HISTORIAN",
+            distanceText: "148 km (from Alleppey Canals)",
+            driveTime: "3h 45m",
+            fareCab: "₹3,800",
+            fareAuto: "₹400",
+            fareBus: "₹200",
+            targetCoords: [8.5241, 76.9366],
+
+            // Photo Gallery deck
+            gallery: [
+                { url: "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80", label: "Temple Gate Spire" },
+                { url: "https://images.unsplash.com/photo-1599933024982-aa01463a5be5?auto=format&fit=crop&w=800&q=80", label: "Royal Street Front" },
+                { url: "https://images.unsplash.com/photo-1561361531-997c5e23db16?auto=format&fit=crop&w=800&q=80", label: "Kovalam Beach Cliffs" }
+            ],
+
+            timeline: [
+                { time: "07:30 AM - 10:30 AM", title: "Padmanabhaswamy Temple Walk", desc: "Visit the legendary golden temple towers. Admire the giant stone corridor containing 367 hand-carved pillars.", dur: "3 Hrs", price: "Strict Dress Code" },
+                { time: "11:30 AM - 02:30 PM", title: "Kuthira Malika Royal Palace", desc: "Tour the famous Palace of Horses to see 122 hand-carved teakwood figures. Learn about royal gems and Belgian glass mirrors.", dur: "3 Hrs", price: "₹150 Ticket" },
+                { time: "03:30 PM - 06:30 PM", title: "Napier Art Museum & Garden Walk", desc: "Admire a gorgeous brick building with custom Gothic roofs. Walk through the cool grassy botanic gardens.", dur: "3 Hrs", price: "₹40 Ticket" },
+                { time: "07:30 PM - 09:30 PM", title: "Grand Banana Leaf Feast (Sadya)", desc: "Eat a traditional feast served on a giant banana leaf, offering up to 24 separate delicious local vegetarian items.", dur: "2 Hrs", price: "₹350 Meal" }
+            ],
+
+            stays: [
+                { type: "Luxury Option", name: "The Raviz Kovalam", desc: "Five-star clifftop suites with majestic ocean views and infinite pools.", price: "₹24,000 / Night" },
+                { type: "Nice Boutique", name: "Vivanta Trivandrum", desc: "Modern hotel in the city center with a lovely rooftop infinity pool.", price: "₹10,000 / Night" },
+                { type: "Simple Budget", name: "Treebo Boutique City", desc: "Clean, functional air-conditioned rooms very close to the museums.", price: "₹3,500 / Night" },
+                { type: "Budget Hostel", name: "Nomads Kovalam Beach", desc: "Fun beachside shared dorm situated near the lighthouse tower.", price: "₹850 / Night" }
+            ],
+
+            cafes: [
+                { name: "Mothers Veg Plaza", dish: "A grand banana leaf Sadya with sweet coconut payasam pudding.", rating: "★ 4.6" },
+                { name: "Villa Maya", dish: "Crispy fried lotus stem snacks and fresh coconut curry.", rating: "★ 4.7" }
+            ],
+
+            localFoods: [
+                { name: "Ada Pradhaman Pot", desc: "Sweet dessert porridge cooked with rice flakes, fresh coconut milk, and jaggery." },
+                { name: "Avial Vegetable Toss", desc: "Fresh mix of garden vegetables cooked with ground coconut paste and oil." }
+            ],
+
+            shopping: [
+                { item: "Handwoven Gold Sarees", area: "Balaramapuram Weavers", desc: "Classic white cotton garments featuring beautiful real golden borders." },
+                { item: "Sandalwood Deities", area: "Government Art Emporium", desc: "Exquisitely hand-carved model figurines that smell of rich sandalwood." }
+            ],
+
+            gear: "A wide lens to capture the full symmetry of grand historic castle halls.",
+            settings: "Capture high-contrast shadows created by the horses carved under the wooden roofs.",
+            drone: "No Drones. The entire city is classified as a highly secure flight zone.",
+
+            photoSpots: [
+                { name: "Napier Gothic Brick Facade", time: "03:45 PM Warm Shadows" },
+                { name: "Kuthira Malika Courtyard", time: "09:30 AM Morning Glow" }
+            ],
+
+            gemTitle: "Vizhinjam Cave Temple",
+            gemDesc: "An ancient 8th-century temple carved out of a single granite stone, hidden close to the harbor.",
+            optionalTitle: "Kovalam Beach Lighthouse",
+            optionalDesc: "Drive 30 minutes over to ascend the tall red striped lighthouse for amazing sunset photos.",
+
+            scam: "Fake temple guides demanding money to fast-track your entry queue. Only trust authorized ticket desks.",
+            mistake: "Wearing shorts or carrying leather accessories inside. Men must wear a white sarong (mundu).",
+
+            hospital: "KIMS Health Clinic (0471-2941000)",
+            pharmacy: "East Fort Central Pharmacy",
+            atm: "Canara Bank Main Temple Gate",
+            phone: "Airport Info Center: 0471-2500111",
+
+            phrases: [
+                { word: "Kshamikkanam", mean: "Excuse me / Sorry", pron: "Ksha-mee-kuh-num" },
+                { word: "Poyi Varam", mean: "Goodbye", pron: "Poh-yee vuh-rum" },
+                { word: "Sugamaano?", mean: "How are you?", pron: "Suh-guh-mah-no?" }
+            ]
+        }
+    };
+
+    // Checklist presets for all days
+    const packPresets = {
+        1: [
+            { text: "Light Linen Clothes", desc: "Very lightweight fabrics for high coastal humidity.", checked: true },
+            { text: "Mosquito Repellent Spray", desc: "Keep bugs away during twilight harbor walks.", checked: false },
+            { text: "Gear Rain Covers", desc: "Quickly protect your camera if it showers.", checked: false }
+        ],
+        2: [
+            { text: "Warm Fleece Jacket", desc: "Important for chilly early-morning open jeep drives.", checked: true },
+            { text: "Sturdy Hiking Shoes", desc: "For wet, slippery mountain walking paths.", checked: false },
+            { text: "High SPF Sunscreen", desc: "Mountain sun is strong even when it feels cool.", checked: false }
+        ],
+        3: [
+            { text: "Waterproof dry bag", desc: "To shield mobile phones and cameras on the boats.", checked: true },
+            { text: "Wide Rim Hat", desc: "Provides protection from harsh open water sun reflections.", checked: false },
+            { text: "Quick-Dry Apparel", desc: "Dries fast if you get splashed on canoes.", checked: false }
+        ],
+        4: [
+            { text: "White Sarong (Mundu)", desc: "Mandatory dress requirement to enter temple grounds.", checked: true },
+            { text: "Easy Slip-On Sandals", desc: "You must remove shoes frequently outside historical gates.", checked: false },
+            { text: "Soft Lens Cloth", desc: "Cleans fog and humidity off camera glass.", checked: false }
+        ]
+    };
+
+    const challengePresets = {
+        1: [
+            { text: "Fishing Net Silhouette", desc: "Shoot the Chinese nets against the glowing sunset.", checked: false },
+            { text: "Spiced Marketplace Color", desc: "Frame a high-contrast photo of spice baskets.", checked: false },
+            { text: "Old Courtyard Shade", desc: "Capture shadows inside Pepper House.", checked: false }
+        ],
+        2: [
+            { text: "Misty Sunrise Valley", desc: "Capture the golden fog rising over hills.", checked: false },
+            { text: "Wild Goat Close-Up", desc: "A zoom shot of the rare wild mountain goats.", checked: false },
+            { text: "Old Factory Machinery", desc: "Freeze-motion shot of historic leaf dryers.", checked: false }
+        ],
+        3: [
+            { text: "Palm Tree Reflection", desc: "Shoot still lagoon waters reflecting tall trees.", checked: false },
+            { text: "Canoe Paddle Ripples", desc: "A macro shot of a paddle dipping in still water.", checked: false },
+            { text: "Flying Water Heron", desc: "Capture a white bird flying low over lake waters.", checked: false }
+        ],
+        4: [
+            { text: "Gothic Temple Tower", desc: "Get a symmetrical wide angle photo of the temple front.", checked: false },
+            { text: "Teakwood Horse Carving", desc: "Capture details of the 122 wooden horses.", checked: false },
+            { text: "Banana Leaf Sadya", desc: "A top-down color-rich photo of the feast.", checked: false }
+        ]
+    };
+
+    const trivias = [
+        { topic: "🌿 BLACK GOLD", header: "Spice Monopoly", text: "Ancient Roman, Greek, and Egyptian ships sailed 3,000 miles to Kerala just to buy black Malabar pepper, known as Black Gold." },
+        { topic: "🏔️ MOUNTAIN CLIMBS", header: "Highest tea fields", text: "At nearly 7,900 feet, Kolukkumalai in Munnar is the highest organic tea garden on Earth, giving the tea a unique fresh flavor." },
+        { topic: "🛶 ZERO NAILS", header: "Tied houseboats", text: "Traditional houseboats are built entirely without metal nails. Coconut fiber ropes tie the wooden planks together securely." },
+        { topic: "🪙 ROYAL VAULTS", header: "Rich Dynastic Gold", text: "The Padmanabhaswamy Temple holds vast royal gold vaults valued at over $20 billion, making it the richest temple on Earth." }
+    ];
+
+    // Global Interactive State
+    window.app = {
+        activeDay: 1,
+        userProgress: { 1: false, 2: false, 3: false, 4: false },
+        packing: JSON.parse(JSON.stringify(packPresets)),
+        challenges: JSON.parse(JSON.stringify(challengePresets)),
+        triviaIndex: 0,
+        map: null,
+        carMarker: null,
+        routePath: null,
+        soundIsPlaying: false
+    };
+
+    // Precise road routing coordinate nodes for car simulation
+    const trackPoints = {
+        1: [
+            [9.9667, 76.2411] // Kochi Start
+        ],
+        2: [
+            [9.9667, 76.2411],
+            [10.0120, 76.4400],
+            [10.0450, 76.7200],
+            [10.0889, 77.0595] // Munnar Hills
+        ],
+        3: [
+            [10.0889, 77.0595],
+            [10.0050, 76.8200],
+            [9.7500, 76.5500],
+            [9.4981, 76.3388] // Alleppey Canals
+        ],
+        4: [
+            [9.4981, 76.3388],
+            [9.2500, 76.5000],
+            [8.9000, 76.7000],
+            [8.5241, 76.9366] // Trivandrum Capital
+        ]
+    };
+
+    function setupMap() {
+        // Initialize Map
+        window.app.map = L.map('leaflet-map-element', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([9.9667, 76.2411], 8);
+
+        // Add Premium Styled Dark Matter Map Tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 20
+        }).addTo(window.app.map);
+
+        // Map City Markers
+        const pulseIcon = L.divIcon({
+            className: 'map-pulse-dot',
+            iconSize: [12, 12]
+        });
+
+        const stops = [
+            { city: "Fort Kochi", latlng: [9.9667, 76.2411] },
+            { city: "Munnar Hills", latlng: [10.0889, 77.0595] },
+            { city: "Alleppey Canals", latlng: [9.4981, 76.3388] },
+            { city: "Trivandrum", latlng: [8.5241, 76.9366] }
+        ];
+
+        stops.forEach(item => {
+            L.marker(item.latlng, { icon: pulseIcon }).addTo(window.app.map)
+             .bindTooltip(`<span class="font-bold text-xs text-slate-800">${item.city}</span>`, {
+                 permanent: false,
+                 direction: 'top'
+             });
+        });
+
+        // Initialize Animated Car Marker
+        const carIcon = L.divIcon({
+            html: '<div class="text-2xl drop-shadow-lg">🚗</div>',
+            className: 'bg-transparent border-transparent',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+
+        window.app.carMarker = L.marker([9.9667, 76.2411], { icon: carIcon }).addTo(window.app.map);
+
+        // Full Route Polyline background guide
+        const allCoords = [
+            [9.9667, 76.2411],
+            [10.0889, 77.0595],
+            [9.4981, 76.3388],
+            [8.5241, 76.9366]
+        ];
+
+        window.app.routePath = L.polyline(allCoords, {
+            color: '#10B981',
+            weight: 3,
+            opacity: 0.3,
+            dashArray: '5, 5'
+        }).addTo(window.app.map);
+    }
+
+    function triggerCarTrip() {
+        const activeDay = window.app.activeDay;
+        const coords = trackPoints[activeDay];
+        
+        if (!coords || coords.length <= 1) {
+            // Day 1: instantly place car at kochi
+            window.app.carMarker.setLatLng(travelDb[1].targetCoords);
+            window.app.map.panTo(travelDb[1].targetCoords);
+            return;
+        }
+
+        let currentIdx = 0;
+        const totalPoints = coords.length;
+        const animSpeed = 20; // smaller is faster
+
+        function animateSegment() {
+            if (currentIdx >= totalPoints - 1) {
+                // Done Animating
+                window.app.carMarker.setLatLng(coords[totalPoints - 1]);
+                window.app.map.panTo(coords[totalPoints - 1]);
+                return;
+            }
+
+            const startPt = coords[currentIdx];
+            const endPt = coords[currentIdx + 1];
+            let stepsCount = 35;
+            let step = 0;
+
+            function interpolate() {
+                if (step > stepsCount) {
+                    currentIdx++;
+                    animateSegment();
+                    return;
+                }
+
+                const currentLat = startPt[0] + (endPt[0] - startPt[0]) * (step / stepsCount);
+                const currentLng = startPt[1] + (endPt[1] - startPt[1]) * (step / stepsCount);
+
+                window.app.carMarker.setLatLng([currentLat, currentLng]);
+                window.app.map.panTo([currentLat, currentLng]);
+
+                step++;
+                setTimeout(interpolate, animSpeed);
+            }
+
+            interpolate();
+        }
+
+        animateSegment();
+    }
+
+    function selectDay(dayNum) {
+        window.app.activeDay = dayNum;
+
+        // Reset Day Tab Styling
+        document.querySelectorAll('.day-btn').forEach(btn => {
+            btn.className = "day-btn px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 border border-theme-border text-slate-300 hover:border-theme-accent/50";
+        });
+        
+        const activeBtn = document.getElementById(`day-tab-${dayNum}`);
+        if (activeBtn) {
+            activeBtn.className = "day-btn px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 border bg-theme-accent text-slate-900 border-theme-accent shadow-md";
+        }
+
+        // Fetch Day Data
+        const currentData = travelDb[dayNum];
+
+        // Smoothly Swap Hero Details
+        const heroImgElement = document.getElementById('hero-img');
+        if (heroImgElement) {
+            heroImgElement.classList.add('opacity-0');
+            setTimeout(() => {
+                heroImgElement.src = currentData.heroImage;
+                heroImgElement.classList.remove('opacity-0');
+            }, 250);
+        }
+
+        document.getElementById('hero-title').textContent = currentData.title;
+        document.getElementById('hero-desc').textContent = currentData.desc;
+        document.getElementById('vibe-song-title').textContent = currentData.soundVibe;
+
+        // Quick Weather Indicators
+        document.getElementById('loc-weather-name').textContent = currentData.weatherName;
+        document.getElementById('loc-weather-temp').textContent = currentData.weatherTemp;
+        document.getElementById('loc-weather-desc').textContent = currentData.weatherDesc;
+        document.getElementById('loc-weather-icon').innerHTML = `<i class="${currentData.weatherIcon}"></i>`;
+        document.getElementById('time-sunrise').textContent = currentData.sunrise;
+        document.getElementById('time-sunset').textContent = currentData.sunset;
+
+        // Map transit sidebar details
+        document.getElementById('route-label').textContent = dayNum === 1 ? "Kochi Airport ➔ Fort Kochi" : travelDb[dayNum - 1].city + " ➔ " + currentData.city;
+        document.getElementById('route-km').textContent = currentData.distanceText.split(' ')[0] + " km";
+        document.getElementById('est-drive').textContent = currentData.driveTime;
+        document.getElementById('est-cab').textContent = currentData.fareCab;
+        document.getElementById('est-auto').textContent = currentData.fareAuto;
+        document.getElementById('est-bus').textContent = currentData.fareBus;
+
+        // Render sections dynamically
+        drawItinerary(currentData.timeline);
+        drawStays(currentData.stays);
+        drawDining(currentData.cafes);
+        drawLocalFoods(currentData.localFoods);
+        drawShoppingGuides(currentData.shopping);
+        drawCameraSection(currentData);
+        drawChecklists(dayNum);
+        drawMalayalamPhrases(currentData.phrases);
+        drawPhotoGallery(currentData.gallery);
+
+        // Map animation run
+        triggerCarTrip();
+
+        // Budget evaluation
+        calculateTripCosts();
+        updateProgress();
+    }
+
+    function drawPhotoGallery(galleryArray) {
+        const parent = document.getElementById('target-photo-deck');
+        parent.innerHTML = '';
+        
+        galleryArray.forEach((photo, idx) => {
+            const wrap = document.createElement('div');
+            wrap.className = "group relative rounded-xl overflow-hidden aspect-[4/3] bg-slate-950 border border-theme-border/60 hover:border-theme-accent cursor-pointer transition-all duration-200 active:scale-95";
+            
+            // Allow clicking thumbnail to change main hero image
+            wrap.onclick = () => {
+                const heroImg = document.getElementById('hero-img');
+                if (heroImg) {
+                    heroImg.classList.add('opacity-0');
+                    setTimeout(() => {
+                        heroImg.src = photo.url;
+                        heroImg.classList.remove('opacity-0');
+                        popToast(`Hero Swapped to "${photo.label}"`);
+                    }, 200);
+                }
+            };
+
+            wrap.innerHTML = `
+                <img src="${photo.url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${photo.label}">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent flex items-end p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="text-[9px] font-bold text-slate-100 uppercase tracking-wider block truncate">${photo.label}</span>
+                </div>
+            `;
+            parent.appendChild(wrap);
+        });
+    }
+
+    function drawItinerary(scheduleArray) {
+        const parent = document.getElementById('target-timeline');
+        parent.innerHTML = '';
+        scheduleArray.forEach(item => {
+            const card = document.createElement('div');
+            card.className = "bg-slate-900/50 hover:bg-slate-900 border border-theme-border/60 hover:border-theme-accent/40 rounded-xl p-4 transition-all duration-200 grid grid-cols-1 md:grid-cols-4 gap-3 items-center";
+            card.innerHTML = `
+                <div class="space-y-1">
+                    <span class="text-[9px] uppercase font-bold text-theme-accent tracking-wider block">${item.time}</span>
+                    <span class="text-xs font-semibold text-slate-400 block"><i class="fa-regular fa-clock"></i> ${item.dur}</span>
+                </div>
+                <div class="md:col-span-2 space-y-1">
+                    <h4 class="text-xs font-bold text-white uppercase">${item.title}</h4>
+                    <p class="text-xs text-slate-300 font-light leading-relaxed">${item.desc}</p>
+                </div>
+                <div class="text-left md:text-right md:border-l border-theme-border/40 pl-0 md:pl-4">
+                    <span class="text-[8px] text-slate-500 font-bold block uppercase">ENTRY COST</span>
+                    <span class="text-xs font-bold text-theme-gold uppercase">${item.price}</span>
+                </div>
+            `;
+            parent.appendChild(card);
+        });
+    }
+
+    function drawStays(staysArray) {
+        const parent = document.getElementById('target-stays');
+        parent.innerHTML = '';
+        staysArray.forEach(stay => {
+            const block = document.createElement('div');
+            block.className = "p-4 bg-slate-900/50 border border-theme-border/60 hover:border-theme-accent/40 rounded-xl flex justify-between items-center transition-all";
+            block.innerHTML = `
+                <div class="space-y-1">
+                    <span class="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300 inline-block">${stay.type}</span>
+                    <h5 class="text-xs font-bold text-white uppercase mt-1">${stay.name}</h5>
+                    <p class="text-[11px] text-slate-400 font-light leading-snug">${stay.desc}</p>
+                </div>
+                <div class="text-right pl-4 flex-shrink-0">
+                    <span class="text-xs font-bold text-theme-accent block">${stay.price.split(' ')[0]}</span>
+                    <span class="text-[9px] text-slate-500 font-semibold">/ night</span>
+                </div>
+            `;
+            parent.appendChild(block);
+        });
+    }
+
+    function drawDining(diningArray) {
+        const parent = document.getElementById('target-cafes');
+        parent.innerHTML = '';
+        diningArray.forEach(cafe => {
+            const element = document.createElement('div');
+            element.className = "p-3.5 bg-slate-900/50 border border-theme-border/60 rounded-xl space-y-1.5 hover:border-theme-accent/40 transition-all";
+            element.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <h5 class="text-xs font-bold text-white uppercase">${cafe.name}</h5>
+                    <span class="text-[10px] font-bold text-theme-accent bg-theme-accent/10 px-1.5 py-0.5 rounded">${cafe.rating}</span>
+                </div>
+                <p class="text-xs text-slate-400 font-light"><strong class="text-slate-300 font-medium">Signature:</strong> ${cafe.dish}</p>
+            `;
+            parent.appendChild(element);
+        });
+    }
+
+    function drawLocalFoods(foodsArray) {
+        const parent = document.getElementById('target-localfoods');
+        parent.innerHTML = '';
+        foodsArray.forEach(food => {
+            const item = document.createElement('div');
+            item.className = "p-3.5 bg-slate-900/50 border border-theme-border/60 rounded-xl flex gap-3 items-start hover:border-theme-accent/40 transition-all";
+            item.innerHTML = `
+                <div class="w-7 h-7 rounded-lg bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center text-theme-accent flex-shrink-0 text-xs">
+                    <i class="fa-solid fa-bowl-food"></i>
+                </div>
+                <div class="space-y-0.5">
+                    <h5 class="text-xs font-bold text-white uppercase">${food.name}</h5>
+                    <p class="text-[11px] text-slate-400 font-light leading-relaxed">${food.desc}</p>
+                </div>
+            `;
+            parent.appendChild(item);
+        });
+    }
+
+    function drawShoppingGuides(shopArray) {
+        const parent = document.getElementById('target-shopping');
+        parent.innerHTML = '';
+        shopArray.forEach(shop => {
+            const block = document.createElement('div');
+            block.className = "p-3.5 bg-slate-900/50 border border-theme-border/60 rounded-xl space-y-1.5 hover:border-theme-accent/40 transition-all";
+            block.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <h5 class="text-xs font-bold text-white uppercase">${shop.item}</h5>
+                    <span class="text-[8px] font-bold text-theme-gold bg-theme-gold/10 px-2 py-0.5 rounded-full uppercase tracking-wider"><i class="fa-solid fa-map-location"></i> ${shop.area}</span>
+                </div>
+                <p class="text-[11px] text-slate-400 font-light leading-relaxed">${shop.desc}</p>
+            `;
+            parent.appendChild(block);
+        });
+    }
+
+    function drawCameraSection(data) {
+        // Creator texts
+        document.getElementById('creator-rec-lens').textContent = data.gear;
+        document.getElementById('creator-shot-settings').textContent = data.settings;
+        document.getElementById('creator-drone-notes').textContent = data.drone;
+
+        // Hidden gems etc
+        document.getElementById('loc-gem-title').textContent = data.gemTitle;
+        document.getElementById('loc-gem-desc').textContent = data.gemDesc;
+        document.getElementById('loc-opt-title').textContent = data.optionalTitle;
+        document.getElementById('loc-opt-desc').textContent = data.optionalDesc;
+
+        // Alerts & Mistakes
+        document.getElementById('alert-scam-txt').textContent = data.scam;
+        document.getElementById('alert-mistake-txt').textContent = data.mistake;
+
+        // Emergency Clinics
+        document.getElementById('emerg-hospital').textContent = data.hospital;
+        document.getElementById('emerg-pharmacy').textContent = data.pharmacy;
+        document.getElementById('emerg-atm').textContent = data.atm;
+        document.getElementById('emerg-phone').textContent = data.phone;
+
+        // Draw Photo Spots
+        const parent = document.getElementById('target-insta-spots');
+        parent.innerHTML = '';
+        data.photoSpots.forEach(spot => {
+            const card = document.createElement('div');
+            card.className = "p-3 bg-slate-900/40 border border-theme-border/50 rounded-xl flex justify-between items-center text-xs";
+            card.innerHTML = `
+                <span class="font-semibold text-slate-200">${spot.name}</span>
+                <span class="text-[10px] font-bold text-theme-accent bg-theme-accent/15 px-1.5 py-0.5 rounded uppercase tracking-wider">${spot.time}</span>
+            `;
+            parent.appendChild(card);
+        });
+    }
+
+    function drawMalayalamPhrases(phraseArray) {
+        const parent = document.getElementById('target-phrases');
+        parent.innerHTML = '';
+        phraseArray.forEach(phrase => {
+            const card = document.createElement('div');
+            card.className = "p-3 bg-slate-900/50 border border-theme-border/60 rounded-xl flex justify-between items-center cursor-pointer hover:border-theme-accent/50 transition-all relative group";
+            card.onclick = () => {
+                copyText(phrase.word);
+                popToast(`Copied "${phrase.word}" to clipboard!`);
+            };
+            card.innerHTML = `
+                <div class="space-y-0.5">
+                    <span class="text-xs font-bold text-theme-accent block uppercase">${phrase.word} <i class="fa-regular fa-copy text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1"></i></span>
+                    <span class="text-[10px] text-slate-400 block">${phrase.mean}</span>
+                </div>
+                <span class="text-[10px] italic font-semibold text-slate-400">"${phrase.pron}"</span>
+            `;
+            parent.appendChild(card);
+        });
+    }
+
+    function copyText(value) {
+        const input = document.createElement("textarea");
+        input.value = value;
+        document.body.appendChild(input);
+        input.select();
+        try {
+            document.execCommand('copy');
+        } catch (e) {
+            console.warn('Clipboard write error: ', e);
+        }
+        document.body.removeChild(input);
+    }
+
+    function popToast(msg) {
+        const alertBox = document.createElement('div');
+        alertBox.className = "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-theme-accent text-slate-955 font-bold text-xs px-4 py-2 rounded-xl shadow-lg transition-all duration-300 opacity-0 transform translate-y-3";
+        alertBox.textContent = msg;
+        document.body.appendChild(alertBox);
+        setTimeout(() => {
+            alertBox.classList.remove('opacity-0', 'translate-y-3');
+        }, 10);
+        setTimeout(() => {
+            alertBox.classList.add('opacity-0', 'translate-y-3');
+            setTimeout(() => {
+                document.body.removeChild(alertBox);
+            }, 300);
+        }, 1800);
+    }
+
+    function drawChecklists(dayNum) {
+        // Packing
+        const packParent = document.getElementById('target-pack-list');
+        packParent.innerHTML = '';
+        const currentPackList = window.app.packing[dayNum];
+        currentPackList.forEach((item, index) => {
+            const label = document.createElement('label');
+            label.className = "flex items-start gap-3 bg-slate-900/50 border border-theme-border/60 hover:border-theme-accent/30 p-3 rounded-xl cursor-pointer transition-colors";
+            label.innerHTML = `
+                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="togglePackTick(${dayNum}, ${index})" class="mt-0.5 accent-theme-accent w-4 h-4 rounded">
+                <div>
+                    <span class="text-xs font-semibold text-slate-200 block">${item.text}</span>
+                    <span class="text-[10px] text-slate-400 leading-snug font-light">${item.desc}</span>
+                </div>
+            `;
+            packParent.appendChild(label);
+        });
+
+        // Challenges
+        const chParent = document.getElementById('target-challenges');
+        chParent.innerHTML = '';
+        const currentChList = window.app.challenges[dayNum];
+        currentChList.forEach((item, index) => {
+            const label = document.createElement('label');
+            label.className = "flex items-start gap-3 bg-slate-900/50 border border-theme-border/60 hover:border-theme-accent/30 p-3 rounded-xl cursor-pointer transition-colors";
+            label.innerHTML = `
+                <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleChallengeTick(${dayNum}, ${index})" class="mt-0.5 accent-theme-gold w-4 h-4 rounded">
+                <div>
+                    <span class="text-xs font-bold text-white block uppercase">${item.text}</span>
+                    <span class="text-[10px] text-slate-400 leading-snug font-light">${item.desc}</span>
+                </div>
+            `;
+            chParent.appendChild(label);
+        });
+
+        calculateChecklistStats(dayNum);
+    }
+
+    function togglePackTick(dayNum, idx) {
+        window.app.packing[dayNum][idx].checked = !window.app.packing[dayNum][idx].checked;
+        calculateChecklistStats(dayNum);
+        updateProgress();
+    }
+
+    function toggleChallengeTick(dayNum, idx) {
+        window.app.challenges[dayNum][idx].checked = !window.app.challenges[dayNum][idx].checked;
+        if (window.app.challenges[dayNum][idx].checked) {
+            runShortConfetti();
+        }
+        calculateChecklistStats(dayNum);
+        updateProgress();
+    }
+
+    function calculateChecklistStats(dayNum) {
+        const pack = window.app.packing[dayNum];
+        const packedCount = pack.filter(i => i.checked).length;
+        document.getElementById('pack-count-label').textContent = `${packedCount}/${pack.length} Packed`;
+
+        const challenges = window.app.challenges[dayNum];
+        const chCount = challenges.filter(i => i.checked).length;
+        const banner = document.getElementById('badge-count-label');
+
+        if (chCount === challenges.length) {
+            banner.className = "text-[9px] font-bold text-slate-950 bg-theme-accent px-2 py-0.5 rounded";
+            banner.textContent = "🏆 BADGE UNLOCKED";
+            window.app.userProgress[dayNum] = true;
+        } else {
+            banner.className = "text-[9px] font-bold text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-theme-border";
+            banner.textContent = `${chCount}/${challenges.length} Done`;
+            window.app.userProgress[dayNum] = false;
+        }
+    }
+
+    function calculateTripCosts() {
+        const travelers = parseInt(document.getElementById('input-people-slider').value);
+        const lodging = document.getElementById('input-hotel-level').value;
+        const transport = document.getElementById('input-transport-level').value;
+
+        document.getElementById('slider-count-label').textContent = `${travelers} ${travelers === 1 ? 'Person' : 'People'}`;
+
+        // Dynamic pricing structures
+        let hotelCostPerDay = 7000;
+        if (lodging === 'luxury') hotelCostPerDay = 18000;
+        if (lodging === 'mid') hotelCostPerDay = 7000;
+        if (lodging === 'budget') hotelCostPerDay = 2500;
+        if (lodging === 'hostel') hotelCostPerDay = 800;
+
+        let travelCostPerDay = 3500;
+        if (transport === 'private') travelCostPerDay = 3500;
+        if (transport === 'eco') travelCostPerDay = 1000;
+        if (transport === 'public') travelCostPerDay = 150;
+
+        const foodEstimatePerPersonPerDay = 1200;
+        const ticketEstimatePerPersonPerDay = 600;
+
+        // Multiply across full 4 days duration
+        const totalAccommodations = hotelCostPerDay * 3 * travelers; // 3 Nights total stayovers
+        const totalTransport = travelCostPerDay * 4; // Flat vehicle rental fee
+        const totalDining = foodEstimatePerPersonPerDay * 4 * travelers;
+        const totalActivities = ticketEstimatePerPersonPerDay * 4 * travelers;
+
+        const grandTotalSum = totalAccommodations + totalTransport + totalDining + totalActivities;
+        const perPersonTotalSum = Math.round(grandTotalSum / travelers);
+
+        // Update DOM Displays
+        document.getElementById('sum-grand-total').textContent = grandTotalSum.toLocaleString('en-IN');
+        document.getElementById('sum-per-person').textContent = `₹${perPersonTotalSum.toLocaleString('en-IN')}`;
+
+        document.getElementById('break-hotel').textContent = `₹${totalAccommodations.toLocaleString('en-IN')}`;
+        document.getElementById('break-transit').textContent = `₹${totalTransport.toLocaleString('en-IN')}`;
+        document.getElementById('break-food').textContent = `₹${totalDining.toLocaleString('en-IN')}`;
+        document.getElementById('break-tickets').textContent = `₹${totalActivities.toLocaleString('en-IN')}`;
+    }
+
+    function updateProgress() {
+        let totalItems = 0;
+        let checkedItems = 0;
+
+        for (let day = 1; day <= 4; day++) {
+            window.app.packing[day].forEach(i => {
+                totalItems++;
+                if (i.checked) checkedItems++;
+            });
+            window.app.challenges[day].forEach(i => {
+                totalItems++;
+                if (i.checked) checkedItems++;
+            });
+        }
+
+        const calculatedPercent = Math.round((checkedItems / totalItems) * 100);
+        document.getElementById('progress-val-text').textContent = `${calculatedPercent}%`;
+        document.getElementById('progress-val-bar').style.width = `${calculatedPercent}%`;
+
+        // Render collectible badging achievements
+        const listParent = document.getElementById('badges-unlocked');
+        listParent.innerHTML = '';
+
+        let badgeCount = 0;
+        for (let day = 1; day <= 4; day++) {
+            const challengesCompleted = window.app.challenges[day].filter(i => i.checked).length === 3;
+            if (challengesCompleted) {
+                const badge = document.createElement('span');
+                badge.className = "text-[9px] font-bold bg-theme-accent text-slate-950 px-2 py-1 rounded-lg border border-theme-accent shadow flex items-center gap-1 uppercase tracking-wide";
+                badge.innerHTML = `<i class="fa-solid fa-award animate-bounce"></i> ${travelDb[day].badgeName.split(' ')[1]}`;
+                listParent.appendChild(badge);
+                badgeCount++;
+            }
+        }
+
+        if (badgeCount === 0) {
+            listParent.innerHTML = `
+                <span class="text-[10px] font-semibold text-slate-500 bg-slate-900 border border-theme-border/60 px-2 py-1 rounded-lg">
+                    🔒 No Badges Unlocked Yet
+                </span>
+            `;
+        }
+
+        if (calculatedPercent === 100) {
+            runGrandCelebration();
+        }
+    }
+
+    function runShortConfetti() {
+        if (typeof confetti === 'function') {
+            confetti({
+                particleCount: 40,
+                spread: 45,
+                origin: { y: 0.8 },
+                colors: ['#10B981', '#F59E0B', '#ffffff']
+            });
+        }
+    }
+
+    function runGrandCelebration() {
+        if (typeof confetti === 'function') {
+            confetti({
+                particleCount: 150,
+                spread: 80,
+                origin: { y: 0.6 },
+                colors: ['#10B981', '#F59E0B', '#EF4444', '#ffffff']
+            });
+        }
+    }
+
+    let triviaAutoPlayInterval = null;
+    let resumeAutoPlayTimeout = null;
+    let accumulatedTranslateX = 0;
+
+    function buildTriviaSlider() {
+        const parent = document.getElementById('trivia-slider');
+        parent.innerHTML = '';
+        trivias.forEach(item => {
+            const card = document.createElement('div');
+            card.className = "min-w-[280px] md:min-w-[360px] bg-slate-900 border border-theme-border rounded-2xl p-5 space-y-2.5 flex-shrink-0 select-none";
+            card.innerHTML = `
+                <span class="text-[9px] text-theme-accent font-bold tracking-widest uppercase block">${item.topic}</span>
+                <h5 class="text-xs font-bold text-white uppercase">${item.header}</h5>
+                <p class="text-xs text-slate-400 font-light leading-relaxed">${item.text}</p>
+            `;
+            parent.appendChild(card);
+        });
+
+        setupTriviaAutoPlay();
+    }
+
+    function slideTrivia(direction) {
+        const track = document.getElementById('trivia-slider');
+        const container = document.getElementById('trivia-slider-container');
+        if (!track || !container) return;
+
+        const containerWidth = container.offsetWidth;
+        const totalScrollWidth = track.scrollWidth;
+        const slideStep = 300; // card visual size + offset gap
+
+        // direction 1 is Next (shifts left, translates negative)
+        // direction -1 is Previous (shifts right, translates positive)
+        accumulatedTranslateX -= direction * slideStep;
+
+        const maximumReach = -(totalScrollWidth - containerWidth);
+
+        // Circular wrapping logic
+        if (accumulatedTranslateX > 0) {
+            accumulatedTranslateX = maximumReach < 0 ? maximumReach : 0;
+        } else if (accumulatedTranslateX < maximumReach) {
+            accumulatedTranslateX = 0;
+        }
+
+        track.style.transform = `translateX(${accumulatedTranslateX}px)`;
+    }
+
+    // Handles arrow manual buttons
+    function manualSlideTrivia(direction) {
+        pauseTriviaAutoPlayOnInteraction();
+        slideTrivia(direction);
+    }
+
+    // Standard loop setup
+    function startTriviaAutoPlayLoop() {
+        stopTriviaAutoPlayLoop(); // avoid overlapping loops
+        triviaAutoPlayInterval = setInterval(() => {
+            slideTrivia(1);
+        }, 3500); // comfortable reading pacing
+    }
+
+    function stopTriviaAutoPlayLoop() {
+        if (triviaAutoPlayInterval) {
+            clearInterval(triviaAutoPlayInterval);
+            triviaAutoPlayInterval = null;
+        }
+    }
+
+    // Stops on touch tap (mobile) or mouse down and delays resume
+    function pauseTriviaAutoPlayOnInteraction() {
+        stopTriviaAutoPlayLoop();
+        if (resumeAutoPlayTimeout) {
+            clearTimeout(resumeAutoPlayTimeout);
+        }
+        // Resumes autoplay loop after 6 seconds of absolute user inactivity
+        resumeAutoPlayTimeout = setTimeout(() => {
+            startTriviaAutoPlayLoop();
+        }, 6000);
+    }
+
+    function setupTriviaAutoPlay() {
+        const container = document.getElementById('trivia-slider-container');
+        if (!container) return;
+
+        // Touch event captures for mobile screens
+        container.addEventListener('touchstart', () => {
+            pauseTriviaAutoPlayOnInteraction();
+        }, { passive: true });
+
+        container.addEventListener('touchmove', () => {
+            pauseTriviaAutoPlayOnInteraction();
+        }, { passive: true });
+
+        // Desktop mouse hover/press state captures
+        container.addEventListener('mousedown', () => {
+            pauseTriviaAutoPlayOnInteraction();
+        });
+
+        container.addEventListener('mouseenter', () => {
+            stopTriviaAutoPlayLoop();
+        });
+
+        container.addEventListener('mouseleave', () => {
+            startTriviaAutoPlayLoop();
+        });
+
+        // Trigger loop start on initial load
+        startTriviaAutoPlayLoop();
+    }
+
+    function toggleVibeTrack() {
+        window.app.soundIsPlaying = !window.app.soundIsPlaying;
+        const button = document.getElementById('vibe-btn');
+        const icon = document.getElementById('vibe-btn-icon');
+        
+        const bars = [
+            document.getElementById('eq-b1'),
+            document.getElementById('eq-b2'),
+            document.getElementById('eq-b3'),
+            document.getElementById('eq-b4')
+        ];
+
+        if (window.app.soundIsPlaying) {
+            button.classList.add('bg-theme-accent', 'text-slate-950');
+            button.classList.remove('bg-theme-accent/20', 'text-theme-accent');
+            icon.className = "fa-solid fa-pause";
+            bars.forEach(bar => bar.style.animationPlayState = 'running');
+        } else {
+            button.classList.remove('bg-theme-accent', 'text-slate-950');
+            button.classList.add('bg-theme-accent/20', 'text-theme-accent');
+            icon.className = "fa-solid fa-play";
+            bars.forEach(bar => bar.style.animationPlayState = 'paused');
+        }
+    }
+
+    // On Load Initiator
+    window.onload = function() {
+        setupMap();
+        selectDay(1);
+        buildTriviaSlider();
+    };
+</script>
+</body>
+</html>
